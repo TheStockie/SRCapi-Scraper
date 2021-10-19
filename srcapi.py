@@ -3,12 +3,14 @@ import csv
 api = srcomapi.SpeedrunCom(); api.debug = 1
 
 def subcategory_parse(subcategory):
-  if subcategory == '4lxppk3q':
+  if subcategory == '5lerr0mq' or subcategory == 'jq600wvq':
     current_run["subcategory"] = '60Hz'
   elif subcategory == '0q5nnm7q':
     current_run["subcategory"] = '50Hz'
-  else:
+  elif subcategory == '4lxppk3q':
     current_run["subcategory"] = 'PS2 NTSC-U'
+  else:
+    current_run["subcategory"] = subcategory
 
 # Finding ICO
 ico = api.search(srcomapi.datatypes.Game, {"name": "ico"})[0]
@@ -24,32 +26,33 @@ for category in ico.categories:
   else:
     ico_runs[category.name] = dt.Leaderboard(api, data=api.get("leaderboards/{}/category/{}?embed=variables".format(ico.id, category.id)))
 
-game_dict = {}
+ico_csv = open("ico.csv", "w", encoding='utf-8')
+writer = csv.writer(ico_csv)
+
 # Parsing data
 for category in ico_runs.keys():
     category_dict = {}
     if type(ico_runs[category]) is srcomapi.datatypes.Leaderboard:
-        i = 1
-        for run in ico_runs[category].runs:
-            current_run = {}
-            r = run["run"]
+      writer.writerow([category])
+      i = 1
 
-            if len(r.values.values()) > 0:
-              subcategory_parse(list(r.values.values())[0])
+      for run in ico_runs[category].runs:
+        current_run = {}
+        r = run["run"]
 
-            current_run["player"] = r.players
-            current_run["times"] = r.times
-            current_run["videos"] = r.videos
-            current_run["date"] = r.date
+        if len(r.values.values()) > 0:
+          subcategory_parse(list(r.values.values())[0])
 
-            category_dict[i] = current_run
-            i = i + 1
-        game_dict[category] = category_dict
+        current_run["player"] = r.players
+        current_run["times"] = r.times
+        current_run["videos"] = r.videos
+        current_run["date"] = r.date
 
-ico_csv = open("ico.csv", "w", encoding='utf-8')
-writer = csv.writer(ico_csv)
+        category_dict[i] = current_run
+        i = i + 1
 
-for category_name, runs in game_dict.items():
-  writer.writerow([category_name, runs])
+    
+    for k,v in category_dict.items():
+      writer.writerow([k, v])
 
 ico_csv.close()
