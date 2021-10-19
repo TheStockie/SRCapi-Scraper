@@ -2,6 +2,14 @@ import srcomapi, srcomapi.datatypes as dt
 import csv
 api = srcomapi.SpeedrunCom(); api.debug = 1
 
+def subcategory_parse(subcategory):
+  if subcategory == '4lxppk3q':
+    current_run["subcategory"] = '60Hz'
+  elif subcategory == '0q5nnm7q':
+    current_run["subcategory"] = '50Hz'
+  else:
+    current_run["subcategory"] = 'PS2 NTSC-U'
+
 # Finding ICO
 ico = api.search(srcomapi.datatypes.Game, {"name": "ico"})[0]
 ico_runs = {}
@@ -16,29 +24,32 @@ for category in ico.categories:
   else:
     ico_runs[category.name] = dt.Leaderboard(api, data=api.get("leaderboards/{}/category/{}?embed=variables".format(ico.id, category.id)))
 
-test = {}
+game_dict = {}
 # Parsing data
 for category in ico_runs.keys():
-    test2 = {}
+    category_dict = {}
     if type(ico_runs[category]) is srcomapi.datatypes.Leaderboard:
-        test3 = {}
         i = 1
         for run in ico_runs[category].runs:
-            true_run = run["run"]
-            print(true_run)
-            test3["player"] = true_run.players
-            test3["times"] = true_run.times
-            test3["videos"] = true_run.videos
-            test3["date"] = true_run.date
+            current_run = {}
+            r = run["run"]
 
-            test2[i] = test3
+            if len(r.values.values()) > 0:
+              subcategory_parse(list(r.values.values())[0])
+
+            current_run["player"] = r.players
+            current_run["times"] = r.times
+            current_run["videos"] = r.videos
+            current_run["date"] = r.date
+
+            category_dict[i] = current_run
             i = i + 1
-        test[category] = test2
+        game_dict[category] = category_dict
 
-ico_csv = open("ico.csv", "w")
+ico_csv = open("ico.csv", "w", encoding='utf-8')
 writer = csv.writer(ico_csv)
 
-for key, value in test.items():
-    writer.writerow([key, value])
+for category_name, runs in game_dict.items():
+  writer.writerow([category_name, runs])
 
 ico_csv.close()
